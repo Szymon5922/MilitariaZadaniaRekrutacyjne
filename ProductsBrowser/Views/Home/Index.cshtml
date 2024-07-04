@@ -1,0 +1,200 @@
+﻿@model ProductsBrowser.Models.Products
+ 
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<head>
+    <meta charset="UTF-8">
+    <title>Products Browser</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <style>
+        body {
+            background-image: url("img/bg.jpg");
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        .product-item {
+            background-color: dimgrey;
+            padding: 3rem;
+            display: none;
+            color: white;
+        }
+
+        .carousel {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .carousel-inner img {
+            margin: 0 auto;
+        }
+
+        #nextButtonContainer {
+            text-align: center;
+            margin-top: 2rem;
+            margin-bottom: 5rem;
+        }
+
+        .button-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+
+        .like-icon:before,
+        .unlike-icon:before {
+            font-size: 24px;
+            margin-right: 5px;
+        }
+
+        #endMessage {
+            color: white;
+            display: none;
+            font-size:40px;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="productsContainer" class="row">
+            @for (int i = 0; i < Model.ProductsList.Count; i++)
+            {
+                var product = Model.ProductsList[i];
+                <div class="product-item">
+                    <h2>@product.Name</h2>
+                    <p>@Html.Raw(product.Description)</p>
+                    @if (@product.Quantity != null)
+                    {
+                        <p>Ilość: @product.Quantity</p>
+                    }
+                    <p>Cena sugerowana: @product.Srp.Gross PLN</p>
+                    @if (product.EAN != null)
+                    {
+                        <p>EAN: @product.EAN</p>
+                    }
+                    <p>
+                        Kategorie:
+                        @if (product.Categories != null)
+                        {
+                            @string.Join(", ", product.Categories)
+                        }
+                        else
+                        {
+                            <span>Brak kategorii</span>
+                        }
+                    </p>
+                    <p>
+                        Okres gwarancji: @(product.WarrantyPeriod.HasValue && product.WarrantyPeriod > 0 ?
+                    product.WarrantyPeriod + " miesiące" : "Brak gwarancji")
+                    </p>
+                    <p>VAT: @product.Vat%</p>
+
+
+                    @if (product.PhotosUrls != null && product.PhotosUrls.Count > 0)
+                    {
+                        <div id="carousel-@i" class="carousel slide" data-ride="carousel">
+                            <div class="carousel-inner">
+                                @for (int j = 0; j < product.PhotosUrls.Count; j++)
+                                {
+                                    <div class="carousel-item @(j == 0 ? "active" : "")">
+                                        <img src="@product.PhotosUrls[j]" class="d-block w-100" alt="Product Photo" style="max-width:400px; max-height:400px;" />
+                                    </div>
+                                }
+                            </div>
+                            <a class="carousel-control-prev" href="#carousel-@i" role="button" data-slide="prev">
+                                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                <span class="sr-only">Previous</span>
+                            </a>
+                            <a class="carousel-control-next" href="#carousel-@i" role="button" data-slide="next">
+                                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                <span class="sr-only">Next</span>
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <p>Brak zdjęć</p>
+                    }
+                    @if (product.Versions != null)
+                    {
+                        <h3>Wersje:</h3>
+                        <ul>
+                            @foreach (var version in product.Versions)
+                            {
+                                <li>
+                                    <p>@version.Name</p>
+                                    @if (version.Description != null)
+                                    {
+                                        <p>@version.Description</p>
+                                    }
+                                    <p>Ilość: @version.Quantity</p>
+                                </li>
+                            }
+                        </ul>
+                    }
+                </div>
+            }
+        </div>
+        <div id="nextButtonContainer" class="row justify-content-center">
+            <div class="button-container">
+                <button id="likeButton" class="btn btn-success mt-3 mr-3"><span class="like-icon">&#x1F44D;</span> Like</button>
+                <button id="unlikeButton" class="btn btn-danger mt-3"><span class="unlike-icon">&#x1F44E;</span> Unlike</button>
+            </div>
+            <p id="endMessage">To już wszystkie produkty</p>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            let currentIndex = 0;
+            const products = $('.product-item');
+            const endMessage = $('#endMessage');
+            const likeButton = $('#likeButton');
+            const unlikeButton = $('#unlikeButton');
+            const productsContainer = $('#productsContainer');
+
+            function showProduct(index) {
+                products.hide();
+                $(products[index]).show();
+            }
+
+            function showEndMessage() {
+                endMessage.show();
+                likeButton.hide();
+                unlikeButton.hide();
+                productsContainer.hide();
+            }
+
+            function sendFeedbackToServer(productId, isLiked) {
+                // Wysyłanie informacji do kontrolera na serwerze
+            }
+
+            likeButton.click(function () {
+                currentIndex = (currentIndex + 1) % products.length;
+                if (currentIndex === 0) {
+                    showEndMessage();
+                }
+                sendFeedbackToServer(products[currentIndex].id, true);
+                showProduct(currentIndex);
+            });
+
+            unlikeButton.click(function () {
+                currentIndex = (currentIndex + 1) % products.length;
+                if (currentIndex === 0) {
+                    showEndMessage();
+                }
+                sendFeedbackToServer(products[currentIndex].id, false);
+                showProduct(currentIndex);
+            });
+
+            showProduct(currentIndex);
+        });
+    </script>
+</body>
